@@ -48,7 +48,7 @@ module Endcaps(length,
         
         // holes for screws
         for (y=[-width/2,width/2-3*wall]){
-            #mkhole(diameter=screw_diameter,
+            mkhole(diameter=screw_diameter,
                    depth=3*wall,
                    plane="xz",
                    y=y);
