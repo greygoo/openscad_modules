@@ -25,7 +25,7 @@ Display(
     hole_distance       = 6,
     hole_diameter       = 3,
     screw_diameter      = 1.5,
-    render_dimensions   = true
+    render_dimensions   = false
 );
 
 
@@ -209,18 +209,15 @@ module Display(screen_width,
     module holes()
     {
         // make two holes for bars to mount object on
-        mkhole(diameter=hole_diameter,
-               depth=case_length,
-               plane="yz",
-               x=wall-case_length,
-               y=hole_offset_y,
-               z=hole_offset_z);
-        mkhole(diameter=hole_diameter,
-               depth=case_length,
-               plane="yz",
-               x=wall-case_length,
-               y=-hole_offset_y,
-               z=hole_offset_z);
+        for(y=[-hole_offset_y,hole_offset_y])
+        {
+            mkhole(diameter=hole_diameter,
+                   depth=case_length,
+                   plane="yz",
+                   x=wall-case_length,
+                   y=y,
+                   z=hole_offset_z);
+        }
         
         // make a small hole cutting the mount holes to fixate with screws
         mkhole(diameter=screw_diameter,
