@@ -20,12 +20,15 @@ Display(
     backplate_width     = 18.4,
     wall                = 0.5,
     foot                = true,
-    ground_distance     = 12,
+    ground_distance     = 11,
     holes               = true,
     hole_distance       = 6,
     hole_diameter       = 3,
     screw_diameter      = 1.5,
-    render_dimensions   = false
+    render_dimensions   = false,
+    board               = true,
+    board_diameter      = 26.2,
+    board_height        = 5
 );
 
 
@@ -45,7 +48,13 @@ module Display(screen_width,
                hole_distance,
                hole_diameter,
                screw_diameter,
-               render_dimensions){
+               render_dimensions,
+               board,
+               board_diameter,
+               board_height){
+
+    ///////////////////// internal variables ///////////////////////
+    board_cutout    = 3/5 * board_diameter;
 
 
     ///////////////////// calculate variables //////////////////////
@@ -55,12 +64,20 @@ module Display(screen_width,
     backplate_case_length   = backplate_length  + 2 * wall;
     backplate_case_width    = backplate_width   + 2 * wall;
     backplate_case_height   = display_case_height;
+    board_case_diameter     = board_diameter + 2 * wall;
+    board_case_height       = board_height + wall;
+    board_case_offset_x     = - display_case_length
+                              - backplate_length
+                              - wall + wall/2
+                              - board_height/2;
+    board_case_offset_z     = (board_diameter - backplate_case_height + wall)/2;
     case_length = display_length  + backplate_length + 2 * wall;
     case_width  = display_width   + backplate_width  + 2 * wall;
     case_height = display_case_height;
     hole_offset_x   = - case_length;
     hole_offset_y   = - hole_distance/2 - screen_offset_x;
     hole_offset_z   = - ground_distance + hole_diameter/2 + 2 * wall;
+ 
 
 
 
@@ -75,7 +92,7 @@ module Display(screen_width,
     // render foot with optional holes if enabled
     if(foot) color("grey") foot();
     
-    
+    if(board) board();
     
     //////////////////////////// modules ///////////////////////////
 
@@ -226,5 +243,74 @@ module Display(screen_width,
                 x=-display_length/2,
                 y=-display_case_width/2-screen_offset_x,
                 z=hole_offset_z);
+    }
+    
+    
+    module board()
+    {
+        translate([board_case_offset_x,
+                   - screen_offset_x,
+                   board_case_offset_z - screen_offset_y])
+        {
+            difference()
+            {
+                case();
+                cutout();
+            }
+        }
+
+        
+        module case()
+        {
+            // round board case
+            rotate([0,270,0])
+                cylinder(d      = board_case_diameter,
+                         h      = board_case_height,
+                         center = true);
+
+            // square board case bottom
+            translate([0,0,-board_case_diameter/2+backplate_case_height/2])
+                cube([board_case_height,
+                      backplate_case_width,
+                      backplate_case_height], center=true);
+            
+            // add foot if enabled
+            translate([0,
+                       0,
+                       - board_case_offset_z
+                       - ground_distance+display_case_height/4
+                       - wall/2])
+                cube([board_case_height,
+                       backplate_case_width,
+                       ground_distance-display_case_height/2], center = true);
+        }
+        
+        module cutout()
+        {
+            // align with back of case
+            translate([-wall/2,0,0])
+            {
+                // round board cutout
+                rotate([0,270,0])
+                    cylinder(d      = board_diameter,
+                             h      = board_height,
+                             center = true);
+                
+                // cutout for top/bottom opening
+                cube([board_height,
+                      backplate_width,
+                      board_case_diameter], center=true);
+                
+                // add foot if enabled
+                translate([0,
+                           0,
+                           - board_case_offset_z
+                           - ground_distance+display_case_height/4
+                           -wall/2])
+                cube([board_case_height,
+                       backplate_width,
+                       ground_distance-display_case_height/2], center = true);
+            }
+        }
     }
 }
