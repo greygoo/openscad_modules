@@ -1,6 +1,6 @@
 // Display holding module
 //
-// Object is centered and zeroed with screen on the x axis
+// Object is centered and zeroed with screen center on the x axis
 
 use <Helper.scad>;
 
@@ -20,7 +20,7 @@ Display(
     backplate_width     = 18.4,
     wall                = 0.5,
     foot                = true,
-    ground_distance     = 11,
+    ground_distance     = 12,
     holes               = true,
     hole_distance       = 6,
     hole_diameter       = 3,
@@ -68,7 +68,7 @@ module Display(screen_width,
     board_case_height       = board_height + wall;
     board_case_offset_x     = - display_case_length
                               - backplate_length
-                              - wall + wall/2
+                              + wall/2
                               - board_height/2;
     board_case_offset_z     = (board_diameter - backplate_case_height + wall)/2;
     case_length = display_length  + backplate_length + 2 * wall;
@@ -77,29 +77,28 @@ module Display(screen_width,
     hole_offset_x   = - case_length;
     hole_offset_y   = - hole_distance/2 - screen_offset_x;
     hole_offset_z   = - ground_distance + hole_diameter/2 + 2 * wall;
- 
-
 
 
     //////////////////// parts to be rendered //////////////////////
-    
+
     // render object
     color("lightgrey") object();
-                      
+
     // render dimensions if enabled
     if(render_dimensions) color("red") dimensions();
-    
+
     // render foot with optional holes if enabled
     if(foot) color("grey") foot();
-    
+
     if(board) board();
-    
+
+
     //////////////////////////// modules ///////////////////////////
 
     // object itself
     module object(){
         difference() {
-            
+
             // basic shape
             union(){
                 // offset to always center on the screen
@@ -116,17 +115,17 @@ module Display(screen_width,
                               backplate_case_height], center=true);
                 }
             }
-            
+
             // cutouts
             union(){
                 // screen cutout
                 translate([wall/2,0,0])
                     cube([wall,screen_width,screen_height], center=true);
-                
+
                 // opening above screen
                 cutout_height=(display_height-screen_height)/2
                               -screen_offset_y;
-                
+
                 translate([wall/2,
                            0,
                            (display_height-cutout_height)/2-screen_offset_y])
@@ -159,7 +158,7 @@ module Display(screen_width,
 
     module dimensions(){
         dist = 2; // space between spacers
-        
+
         color("black") {
             translate([0,0,display_height/2+dist]){
                 translate([0,backplate_width/2,0]){
@@ -179,7 +178,7 @@ module Display(screen_width,
                 
                 translate([-3*dist,-backplate_width/2-screen_offset_x,0])
                     rotate([0,0,90])
-                        Spacer(l=backplate_width,t="backplate width");                
+                        Spacer(l=backplate_width,t="backplate width");
             }
             
             translate([0,backplate_width/2+dist,-screen_offset_y])
@@ -209,8 +208,8 @@ module Display(screen_width,
         {
             item();
         }
-        
-        
+
+
         module item(){    
             mkfoot(height=ground_distance
                          -display_height/2
@@ -235,7 +234,7 @@ module Display(screen_width,
                    y=y,
                    z=hole_offset_z);
         }
-        
+
         // make a small hole cutting the mount holes to fixate with screws
         mkhole(diameter=screw_diameter,
                 depth=display_case_width,
@@ -244,18 +243,24 @@ module Display(screen_width,
                 y=-display_case_width/2-screen_offset_x,
                 z=hole_offset_z);
     }
-    
-    
+
+
     module board()
     {
-        translate([board_case_offset_x,
-                   - screen_offset_x,
-                   board_case_offset_z - screen_offset_y])
+        item();
+        if(foot) foot();
+
+        module item()
         {
-            difference()
+            translate([board_case_offset_x,
+                       - screen_offset_x,
+                       board_case_offset_z - screen_offset_y])
             {
-                case();
-                cutout();
+                difference()
+                {
+                    case();
+                    cutout();
+                }
             }
         }
 
@@ -273,18 +278,8 @@ module Display(screen_width,
                 cube([board_case_height,
                       backplate_case_width,
                       backplate_case_height], center=true);
-            
-            // add foot if enabled
-            translate([0,
-                       0,
-                       - board_case_offset_z
-                       - ground_distance+display_case_height/4
-                       - wall/2])
-                cube([board_case_height,
-                       backplate_case_width,
-                       ground_distance-display_case_height/2], center = true);
         }
-        
+
         module cutout()
         {
             // align with back of case
@@ -295,21 +290,34 @@ module Display(screen_width,
                     cylinder(d      = board_diameter,
                              h      = board_height,
                              center = true);
-                
+
                 // cutout for top/bottom opening
                 cube([board_height,
                       backplate_width,
                       board_case_diameter], center=true);
-                
-                // add foot if enabled
-                translate([0,
-                           0,
-                           - board_case_offset_z
-                           - ground_distance+display_case_height/4
-                           -wall/2])
-                cube([board_case_height,
-                       backplate_width,
-                       ground_distance-display_case_height/2], center = true);
+            }
+        }
+
+
+        module foot()
+        {
+            // add foot to board if enabled
+            if (foot){
+                translate([-board_case_height/2-case_length+2*wall,
+                           -screen_offset_x,
+                           -ground_distance/2-(display_case_height+wall)/4])
+                    difference()
+                    {
+                        cube([board_case_height,
+                              backplate_case_width,
+                              ground_distance-display_case_height/2-wall/2],
+                              center = true);
+
+                        cube([board_case_height,
+                              backplate_width,
+                              ground_distance-display_case_height/2],
+                              center = true);
+                    }
             }
         }
     }
