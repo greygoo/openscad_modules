@@ -1,8 +1,7 @@
 // Glasses connector
 //
 // Object is modelled for specific glasses.
-// Adjust the xyshape array for other shapes.
-// WARNING: this file is WIP and should not yet be used
+// Adjust glasses_connector_shape for other shapes.
 //
 
 use <Helper.scad>;
@@ -11,29 +10,54 @@ $fn=32;
 
 
 // Render object with example values when run standalone
-Glasses_Connector();
+Glasses_Connector(glasses_connector_shape=[[0,0.6],
+                                           [4,1],
+                                           [14,1.5],
+                                           [30,0.5],
+                                           [30,2.5],
+                                           [14,3.8],
+                                           [0,4]],
+                  glasses_connector_height1=4,
+                  glasses_connector_height2=3.3,
+                  glasses_connector_length=30,
+                  glasses_connector_screw_diameter=2,
+                  wall=0.5,
+                  output=true
+                  );
 
 
-module Glasses_Connector()
+module Glasses_Connector(glasses_connector_shape,
+                         glasses_connector_height1,
+                         glasses_connector_height2,
+                         glasses_connector_length,
+                         glasses_connector_screw_diameter,
+                         wall,
+                         output=true)
 {
 
     ///////////////////// internal variables ///////////////////////
 
-    // shape definition of the glasses arm
-    xyshape=[
-        [0,0.6],
-        [4,1],
-        [14,1.5],
-        [30,0.5],
-        [30,2.5],
-        [14,3.8],
-        [0,4],
-    ];
 
-    ///////////////////// calculate variables //////////////////////
-
+    ///////////////////// calculated variables //////////////////////
+    glasses_connector_height        = max(glasses_connector_height1,
+                                          glasses_connector_height2);
+    glasses_connector_case_height   = glasses_connector_height
+                                      + glasses_connector_screw_diameter
+                                      + 2 * wall;
+    glasses_connector_case_width    = max(glasses_connector_shape[1])+2*wall;
+    screw_distance                  = glasses_connector_length
+                                      - glasses_connector_screw_diameter
+                                      - 2 * wall;
+    cutout_length                   = screw_distance
+                                      - glasses_connector_screw_diameter
+                                      - 2 * wall;
+    cutout_height                   = glasses_connector_case_height
+                                      - glasses_connector_height
+                                      - wall;
 
     //////////////////// parts to be rendered //////////////////////
+
+    if(output) output();
 
     object();
     
@@ -41,37 +65,67 @@ module Glasses_Connector()
     //////////////////////////// modules ///////////////////////////
     
     // main object
-    module object()
-    {
-        difference(){
-            difference(){
-                linear_extrude(height=10)
-                    offset(r=1.2)
-                        polygon(xyshape);
-                union(){
-                    linear_extrude(height=8)
-                        polygon(xyshape);
-                    translate([7.5,-1,0])
-                        cube([15,7,5]);
-                }
+    module object(){
+        difference()
+        {
+            // main connector shape
+            linear_extrude(height=glasses_connector_case_height)
+                offset(r=wall)
+                    polygon(glasses_connector_shape);
+
+            union()
+            {
+                // main connector cutout
+                translate([0,0,wall])
+                    linear_extrude(height=glasses_connector_case_height-wall)
+                        polygon(glasses_connector_shape);
+                
+                // front/back connector cutoff
+                for(offset_x=[-wall,glasses_connector_length])
+                {
+                    translate([offset_x,0,0])
+                        cube([wall,
+                              glasses_connector_case_width,
+                              glasses_connector_case_height]);
+                }    
+                
+                // front screw holes
+                    translate([glasses_connector_screw_diameter/2+wall,
+                               0,
+                               glasses_connector_screw_diameter/2
+                              +glasses_connector_height1 + wall])
+                        rotate([270,0,0])
+                            cylinder(d=glasses_connector_screw_diameter,
+                                     h=glasses_connector_case_width+2*wall);
+                // back screw holes
+                    translate([glasses_connector_length
+                              -glasses_connector_screw_diameter/2-wall,
+                               0,
+                               glasses_connector_screw_diameter/2
+                              +glasses_connector_height2 + wall])
+                        rotate([270,0,0])
+                            cylinder(d=glasses_connector_screw_diameter,
+                                     h=glasses_connector_case_width+2*wall);
+                
+                
+                // middle cutout
+                translate([glasses_connector_screw_diameter+2*wall,
+                            0,
+                            glasses_connector_height+wall])
+                    cube([cutout_length,
+                          glasses_connector_case_width,
+                          cutout_height]);
             }
-
-            // front and back cutoff
-            translate([-2,-1,0])
-                cube([2,7,10]);
-                translate([30,-1,0])
-                    cube([1.2,5,10]);
-            
-            // holes
-            translate([4,6,4.2-0.3])
-                rotate([90,0,0])
-                    cylinder(d=2.2,h=7);
-
-            translate([26,6,4.4+0.2])
-                rotate([90,0,0])
-                    cylinder(d=2.2,h=7);
         }
-        translate([-21-1,-0.4,8])
-            cube([21+1,3.6,2]);
+    }
+    
+    
+    module output()
+    {
+        echo("Glasses connector height",glasses_connector_height);
+        echo("Glasses connector case height",glasses_connector_case_height);
+        echo("Glasses connector case width",glasses_connector_case_width);
+        echo("Screw distance", screw_distance);
+        echo("Cutout height", cutout_height);
     }
 }
